@@ -1,0 +1,90 @@
+;
+; RoboBus.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System ; TODO: edit Class
+ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider=%ManufacturerName%
+CatalogFile=Robots.cat
+DriverVer=9/1/2013,1.0.0.0
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+RoboBus.sys  = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%RoboBus.DeviceDesc%=RoboBus_Device, root\robobus ; TODO: edit hw-id
+
+[RoboBus_Device.NT]
+CopyFiles=Drivers_Dir
+
+
+[RoboBus_Device.NT.HW]
+AddReg=ToasterStatBus_Device.NT.AddReg
+
+[RoboBus_Device.NT.AddReg]                            
+HKR,,DeviceCharacteristics,0x10001,0x0100         ; Use same security checks on relative opens
+HKR,,Security,,"D:P(A;;GA;;;BA)(A;;GA;;;SY)"      ; Allow generic-all access to Built-in administrators and Local system 
+
+[Drivers_Dir]
+RoboBus.sys
+
+;-------------- Service installation
+[RoboBus_Device.NT.Services]
+AddService = RoboBus,%SPSVCINST_ASSOCSERVICE%, RoboBus_Service_Inst
+
+; -------------- RoboBus driver install sections
+[RoboBus_Service_Inst]
+DisplayName    = %RoboBus.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\RoboBus.sys
+LoadOrderGroup = Extended Base
+
+;
+;--- RoboBus_Device Coinstaller installation ------
+;
+
+[DestinationDirs]
+RoboBus_Device_CoInstaller_CopyFiles = 11
+
+[RoboBus_Device.NT.CoInstallers]
+AddReg=RoboBus_Device_CoInstaller_AddReg
+CopyFiles=RoboBus_Device_CoInstaller_CopyFiles
+
+[RoboBus_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[RoboBus_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[SourceDisksFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[RoboBus_Device.NT.Wdf]
+KmdfService =  RoboBus, RoboBus_wdfsect
+[RoboBus_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Uri London Consultants"
+ClassName="Robots bus enumerator"
+DiskName = "RoboBus Installation Disk"
+RoboBus.DeviceDesc = "RoboBus Device Enumerator"
+RoboBus.SVCDESC = "RoboBus Device Enumerator Service"

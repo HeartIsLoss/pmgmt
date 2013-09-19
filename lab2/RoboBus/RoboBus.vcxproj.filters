@@ -19,6 +19,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="Device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -47,7 +50,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="SmplDevice.inx">
+    <Inf Include="RoboBus.inx">
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>
