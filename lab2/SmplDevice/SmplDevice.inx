@@ -4,11 +4,11 @@
 
 [Version]
 Signature="$WINDOWS NT$"
-Class=Sample ; TODO: edit Class
-ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+Class=Robot
+ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171}
 Provider=%ManufacturerName%
-CatalogFile=SmplDevice.cat
-DriverVer= ; TODO: set DriverVer in stampinf property pages
+CatalogFile=Robots.cat
+DriverVer=9/1/2013,1.0.1.0
 
 [DestinationDirs]
 DefaultDestDir = 12
@@ -16,11 +16,15 @@ DefaultDestDir = 12
 ; ================= Class section =====================
 
 [ClassInstall32]
-Addreg=SampleClassReg
+Addreg=RobotClassReg
 
-[SampleClassReg]
+[RobotClassReg]
 HKR,,,0,%ClassName%
 HKR,,Icon,,-5
+HKR,,DeviceCharacteristics,0x10001,0x100
+HKR,,Security,,"D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;LS)"
+
+
 
 [SourceDisksNames]
 1 = %DiskName%,,,""
@@ -36,7 +40,7 @@ SmplDevice.sys  = 1,,
 %ManufacturerName%=Standard,NT$ARCH$
 
 [Standard.NT$ARCH$]
-%SmplDevice.DeviceDesc%=SmplDevice_Device, Root\SmplDevice ; TODO: edit hw-id
+%SmplDevice.DeviceDesc%=SmplDevice_Device, {78A1C341-4539-11d3-B88D-00C04FAD5171}\SmplDevice ; TODO: edit hw-id
 
 [SmplDevice_Device.NT]
 CopyFiles=Drivers_Dir
@@ -84,7 +88,7 @@ KmdfLibraryVersion = $KMDFVERSION$
 
 [Strings]
 SPSVCINST_ASSOCSERVICE= 0x00000002
-ManufacturerName="" ; TODO: add ManufacturerName
+ManufacturerName="Uri London Consultants"
 ClassName="Samples" ; TODO: edit ClassName
 DiskName = "SmplDevice Installation Disk"
 SmplDevice.DeviceDesc = "SmplDevice Device"

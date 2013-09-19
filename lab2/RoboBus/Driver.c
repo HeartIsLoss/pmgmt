@@ -32,65 +32,42 @@ DriverEntry(
 /*++
 
 Routine Description:
-    DriverEntry initializes the driver and is the first routine called by the
-    system after the driver is loaded. DriverEntry specifies the other entry
-    points in the function driver, such as EvtDevice and DriverUnload.
+    Entry point to the driver. Initialize the callbacks.
 
 Parameters Description:
 
-    DriverObject - represents the instance of the function driver that is loaded
-    into memory. DriverEntry must initialize members of DriverObject before it
-    returns to the caller. DriverObject is allocated by the system before the
-    driver is loaded, and it is released by the system after the system unloads
-    the function driver from memory.
+    DriverObject - pointer to driver object
 
-    RegistryPath - represents the driver specific path in the Registry.
-    The function driver can use the path to store driver related data between
-    reboots. The path does not store hardware instance specific data.
+	RegistryPath - respresents the driver specific path in the Registry.
 
 Return Value:
 
-    STATUS_SUCCESS if successful,
-    STATUS_UNSUCCESSFUL otherwise.
+    NT status code
 
 --*/
 {
     WDF_DRIVER_CONFIG config;
-    NTSTATUS status;
     WDF_OBJECT_ATTRIBUTES attributes;
+    NTSTATUS status;
+
+	DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_INFO_LEVEL, "RoboBus Driver Entry\n" );
+	DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_INFO_LEVEL, "Built %s %s\n", __DATE__, __TIME__ );
 
     //
-    // Initialize WPP Tracing
-    //
-    WPP_INIT_TRACING( DriverObject, RegistryPath );
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
-
-    //
-    // Register a cleanup callback so that we can call WPP_CLEANUP when
-    // the framework driver object is deleted during driver unload.
-    //
-    WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
+    // Register a cleanup callback.
+    WDF_OBJECT_ATTRIBUTES_INIT( &attributes );
     attributes.EvtCleanupCallback = RoboBusEvtDriverContextCleanup;
 
-    WDF_DRIVER_CONFIG_INIT(&config,
-                           RoboBusEvtDeviceAdd
-                           );
+    WDF_DRIVER_CONFIG_INIT( &config, RoboBusEvtDeviceAdd );
 
-    status = WdfDriverCreate(DriverObject,
-                             RegistryPath,
-                             &attributes,
-                             &config,
-                             WDF_NO_HANDLE
-                             );
+    status = WdfDriverCreate( DriverObject, RegistryPath, &attributes, &config, WDF_NO_HANDLE );
 
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfDriverCreate failed %!STATUS!", status);
-        WPP_CLEANUP(DriverObject);
+		DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "WdfDriverCreate failed: 0x%x", status );
         return status;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
+	DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_INFO_LEVEL, "Exit Driver Entry %x", status );
 
     return status;
 }
@@ -105,7 +82,7 @@ Routine Description:
 
     EvtDeviceAdd is called by the framework in response to AddDevice
     call from the PnP manager. We create and initialize a device object to
-    represent a new instance of the device.
+    represent a new instance of the RoboBus functional device.
 
 Arguments:
 
@@ -122,14 +99,12 @@ Return Value:
     NTSTATUS status;
 
     UNREFERENCED_PARAMETER(Driver);
-
     PAGED_CODE();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+	DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_INFO_LEVEL, "RoboBusEvtDeviceAdd: 0x%p\n", Driver );
 
     status = RoboBusCreateDevice(DeviceInit);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
 
     return status;
 }
@@ -156,12 +131,5 @@ Return Value:
     UNREFERENCED_PARAMETER(DriverObject);
 
     PAGED_CODE ();
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
-
-    //
-    // Stop WPP Tracing
-    //
-    WPP_CLEANUP( WdfDriverWdmGetDriverObject(DriverObject) );
 
 }

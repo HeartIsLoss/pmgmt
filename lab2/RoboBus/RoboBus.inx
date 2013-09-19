@@ -8,7 +8,7 @@ Class=System ; TODO: edit Class
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
 Provider=%ManufacturerName%
 CatalogFile=Robots.cat
-DriverVer=9/1/2013,1.0.0.0
+DriverVer=9/1/2013,1.0.1.0
 
 [DestinationDirs]
 DefaultDestDir = 12

@@ -16,22 +16,25 @@ Environment:
 
 #include "public.h"
 
-//
-// The device context performs the same job as
-// a WDM device extension in the driver frameworks
-//
-typedef struct _DEVICE_CONTEXT
+typedef struct _PDO_DEVICE_CONTEXT
 {
     ULONG PrivateDeviceData;  // just a placeholder
 
-} DEVICE_CONTEXT, *PDEVICE_CONTEXT;
+} PDO_DEVICE_CONTEXT;
 
-//
-// This macro will generate an inline function called DeviceGetContext
-// which will be used to get a pointer to the device context memory
-// in a type safe manner.
-//
-WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(DEVICE_CONTEXT, DeviceGetContext)
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME( PDO_DEVICE_CONTEXT, GetPdoContext )
+
+
+
+typedef struct _FDO_DEVICE_CONTEXT
+{
+	WDFWAITLOCK ChildLock;
+
+} FDO_DEVICE_CONTEXT;
+
+WDF_DECLARE_CONTEXT_TYPE_WITH_NAME( FDO_DEVICE_CONTEXT, GetFdoContext )
+
+
 
 //
 // Function to initialize the device and its callbacks
