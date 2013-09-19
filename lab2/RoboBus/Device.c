@@ -44,23 +44,18 @@ Return Value:
 
 --*/
 {
-    WDF_OBJECT_ATTRIBUTES   attributes;
-	FDO_DEVICE_CONTEXT* context;
+    WDF_OBJECT_ATTRIBUTES   deviceAttributes;
+    PDEVICE_CONTEXT deviceContext;
     WDFDEVICE device;
     NTSTATUS status;
 
     PAGED_CODE();
 
-	WdfDeviceInitSetDeviceType( DeviceInit, FILE_DEVICE_BUS_EXTENDER );
-	WdfDeviceInitSetExclusive( DeviceInit, TRUE );
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&deviceAttributes, DEVICE_CONTEXT);
 
-	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE( &attributes, FDO_DEVICE_CONTEXT );
+    status = WdfDeviceCreate(&DeviceInit, &deviceAttributes, &device);
 
-    status = WdfDeviceCreate( &DeviceInit, &attributes, &device );
-
-
-    if( NT_SUCCESS(status) )
-	{
+    if (NT_SUCCESS(status)) {
         //
         // Get a pointer to the device context structure that we just associated
         // with the device object. We define this structure in the device.h
@@ -70,40 +65,30 @@ Return Value:
         // If you pass a wrong object handle it will return NULL and assert if
         // run under framework verifier mode.
         //
-        context = GetFdoContext( device );
+        deviceContext = DeviceGetContext(device);
 
-		WDF_OBJECT_ATTRIBUTES_INIT( &attributes );
-		attributes.ParentObject = device;
-		status = WdfWaitLockCreate( &attributes, &context->ChildLock );
-	}
-
-	if( NT_SUCCESS(status) )
-	{
+        //
+        // Initialize the context.
+        //
+        deviceContext->PrivateDeviceData = 0;
 
         //
         // Create a device interface so that applications can find and talk
         // to us.
         //
-        status = WdfDeviceCreateDeviceInterface( device, &GUID_DEVINTERFACE_RoboBus, NULL );
-	}
+        status = WdfDeviceCreateDeviceInterface(
+            device,
+            &GUID_DEVINTERFACE_RoboBus,
+            NULL // ReferenceString
+            );
 
-	if( NT_SUCCESS(status) )
-	{
-        //
-        // Initialize the I/O Package and any Queues
-        //
-        status = RoboBusQueueInitialize(device);
+        if (NT_SUCCESS(status)) {
+            //
+            // Initialize the I/O Package and any Queues
+            //
+            status = RoboBusQueueInitialize(device);
+        }
     }
-
-	if( NT_SUCCESS(status) )
-	{
-		PNP_BUS_INFORMATION busInfo;
-		busInfo.BusTypeGuid = GUID_DEVCLASS_ROBOT;
-		busInfo.LegacyBusType = PNPBus;
-		busInfo.BusNumber = 0;
-		WdfDeviceSetBusInformationForChildren( device, &busInfo );
-
-	}
 
     return status;
 }

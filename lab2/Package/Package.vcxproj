@@ -51,7 +51,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2B0C1C1F-9122-4471-A04F-DA5A48A53AFB}</ProjectGuid>
+    <ProjectGuid>{51FB6A5C-220B-419D-9997-3DD0E84D7E28}</ProjectGuid>
     <TemplateGuid>{4605da2c-74a5-4865-98e1-152ef136825f}</TemplateGuid>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <MinimumVisualStudioVersion>11.0</MinimumVisualStudioVersion>
@@ -59,8 +59,9 @@
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
   </PropertyGroup>
   <PropertyGroup Label="Globals">
-    <RootNamespace>SmplDevice_Package</RootNamespace>
+    <RootNamespace>RoboBus_Package</RootNamespace>
     <VCTargetsPath Condition="'$(VCTargetsPath11)' != '' and '$(VisualStudioVersion)' == '11.0'">$(VCTargetsPath11)</VCTargetsPath>
+    <ProjectName>Package</ProjectName>
   </PropertyGroup>
   <PropertyGroup Label="PropertySheets">
     <PlatformToolset>WindowsKernelModeDriver8.0</PlatformToolset>
@@ -139,17 +140,25 @@
     <VerifyFlags>133563</VerifyFlags>
     <PackageDir>$(OutDir)Package</PackageDir>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Vista Debug|Win32'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Win8 Debug|Win32'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
   </ItemDefinitionGroup>
   <ItemGroup>
     <FilesToPackage Include="@(Inf->'%(CopyOutput)')" Condition="'@(Inf)'!=''" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RoboBus\RoboBus.vcxproj">
-      <Project>{aa14928e-02a3-4dbc-9f7a-5764500d6695}</Project>
+      <Project>{beb593c5-b4f7-4154-8638-77e8f2894482}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\SmplDevice\SmplDevice.vcxproj">
-      <Project>{2428a9d3-4547-4fe5-adf8-295ec7767aed}</Project>
+    <ProjectReference Include="..\RoboDevice\RoboDevice.vcxproj">
+      <Project>{571c080b-d98e-44c3-a586-42e093516d66}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

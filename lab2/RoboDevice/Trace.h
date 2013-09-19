@@ -17,12 +17,12 @@ Environment:
 //
 // Define the tracing flags.
 //
-// Tracing GUID - 0b6fe7db-0271-43bf-9d5a-4468ca4ccd6d
+// Tracing GUID - b79ef686-ad95-4954-b01e-56f4234cda8d
 //
 
 #define WPP_CONTROL_GUIDS                                              \
     WPP_DEFINE_CONTROL_GUID(                                           \
-        SmplDeviceTraceGuid, (0b6fe7db,0271,43bf,9d5a,4468ca4ccd6d), \
+        RoboDeviceTraceGuid, (b79ef686,ad95,4954,b01e,56f4234cda8d), \
                                                                             \
         WPP_DEFINE_BIT(MYDRIVER_ALL_INFO)                              \
         WPP_DEFINE_BIT(TRACE_DRIVER)                                   \

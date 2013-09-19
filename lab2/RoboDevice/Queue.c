@@ -18,11 +18,11 @@ Environment:
 #include "queue.tmh"
 
 #ifdef ALLOC_PRAGMA
-#pragma alloc_text (PAGE, SmplDeviceQueueInitialize)
+#pragma alloc_text (PAGE, RoboDeviceQueueInitialize)
 #endif
 
 NTSTATUS
-SmplDeviceQueueInitialize(
+RoboDeviceQueueInitialize(
     _In_ WDFDEVICE Device
     )
 /*++
@@ -63,8 +63,8 @@ Return Value:
         WdfIoQueueDispatchParallel
         );
 
-    queueConfig.EvtIoDeviceControl = SmplDeviceEvtIoDeviceControl;
-    queueConfig.EvtIoStop = SmplDeviceEvtIoStop;
+    queueConfig.EvtIoDeviceControl = RoboDeviceEvtIoDeviceControl;
+    queueConfig.EvtIoStop = RoboDeviceEvtIoStop;
 
     status = WdfIoQueueCreate(
                  Device,
@@ -82,7 +82,7 @@ Return Value:
 }
 
 VOID
-SmplDeviceEvtIoDeviceControl(
+RoboDeviceEvtIoDeviceControl(
     _In_ WDFQUEUE Queue,
     _In_ WDFREQUEST Request,
     _In_ size_t OutputBufferLength,
@@ -125,7 +125,7 @@ Return Value:
 }
 
 VOID
-SmplDeviceEvtIoStop(
+RoboDeviceEvtIoStop(
     _In_ WDFQUEUE Queue,
     _In_ WDFREQUEST Request,
     _In_ ULONG ActionFlags

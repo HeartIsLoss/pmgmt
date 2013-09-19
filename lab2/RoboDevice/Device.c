@@ -18,12 +18,12 @@ Environment:
 #include "device.tmh"
 
 #ifdef ALLOC_PRAGMA
-#pragma alloc_text (PAGE, SmplDeviceCreateDevice)
+#pragma alloc_text (PAGE, RoboDeviceCreateDevice)
 #endif
 
 
 NTSTATUS
-SmplDeviceCreateDevice(
+RoboDeviceCreateDevice(
     _Inout_ PWDFDEVICE_INIT DeviceInit
     )
 /*++
@@ -78,7 +78,7 @@ Return Value:
         //
         status = WdfDeviceCreateDeviceInterface(
             device,
-            &GUID_DEVINTERFACE_SmplDevice,
+            &GUID_DEVINTERFACE_RoboDevice,
             NULL // ReferenceString
             );
 
@@ -86,7 +86,7 @@ Return Value:
             //
             // Initialize the I/O Package and any Queues
             //
-            status = SmplDeviceQueueInitialize(device);
+            status = RoboDeviceQueueInitialize(device);
         }
     }
 

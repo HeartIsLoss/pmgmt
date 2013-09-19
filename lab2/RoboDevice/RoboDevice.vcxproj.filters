@@ -47,7 +47,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="RoboBus.inx">
+    <Inf Include="RoboDevice.inx">
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>

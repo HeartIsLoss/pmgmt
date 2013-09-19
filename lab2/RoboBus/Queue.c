@@ -53,16 +53,28 @@ Return Value:
 
     PAGED_CODE();
     
+    //
+    // Configure a default queue so that requests that are not
+    // configure-fowarded using WdfDeviceConfigureRequestDispatching to goto
+    // other queues get dispatched here.
+    //
+    WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(
+         &queueConfig,
+        WdfIoQueueDispatchParallel
+        );
 
-    // Configure the default queue so that default requests get dispatched here.
+    queueConfig.EvtIoDeviceControl = RoboBusEvtIoDeviceControl;
+    queueConfig.EvtIoStop = RoboBusEvtIoStop;
 
-	WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE( &queueConfig, WdfIoQueueDispatchParallel );
-	queueConfig.EvtIoDeviceControl = RoboBusEvtIoDeviceControl;
-	status = WdfIoQueueCreate( Device, &queueConfig, WDF_NO_OBJECT_ATTRIBUTES, &queue );
+    status = WdfIoQueueCreate(
+                 Device,
+                 &queueConfig,
+                 WDF_NO_OBJECT_ATTRIBUTES,
+                 &queue
+                 );
 
-    if( !NT_SUCCESS(status) )
-	{
-		DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "WdfIoQueueCreateFailed with %x\n", status );
+    if( !NT_SUCCESS(status) ) {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_QUEUE, "WdfIoQueueCreate failed %!STATUS!", status);
         return status;
     }
 
@@ -102,15 +114,10 @@ Return Value:
 
 --*/
 {
-	WDFDEVICE hdevice;
-
-	PAGED_CODE();
-	UNREFERENCED_PARAMETER( InputBufferLength );
-	UNREFERENCED_PARAMETER( OutputBufferLength );
-
-	hdevice = WdfIoQueueGetDevice(Queue);
-	DbgPrint( "RoboBusEvtIoDeviceControl: 0x%p, code=%d\n", hdevice, IoControlCode );
-
+    TraceEvents(TRACE_LEVEL_INFORMATION, 
+                TRACE_QUEUE, 
+                "!FUNC! Queue 0x%p, Request 0x%p OutputBufferLength %d InputBufferLength %d IoControlCode %d", 
+                Queue, Request, (int) OutputBufferLength, (int) InputBufferLength, IoControlCode);
 
     WdfRequestComplete(Request, STATUS_SUCCESS);
 

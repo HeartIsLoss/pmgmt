@@ -19,8 +19,8 @@ Environment:
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
-#pragma alloc_text (PAGE, SmplDeviceEvtDeviceAdd)
-#pragma alloc_text (PAGE, SmplDeviceEvtDriverContextCleanup)
+#pragma alloc_text (PAGE, RoboDeviceEvtDeviceAdd)
+#pragma alloc_text (PAGE, RoboDeviceEvtDriverContextCleanup)
 #endif
 
 
@@ -71,10 +71,10 @@ Return Value:
     // the framework driver object is deleted during driver unload.
     //
     WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
-    attributes.EvtCleanupCallback = SmplDeviceEvtDriverContextCleanup;
+    attributes.EvtCleanupCallback = RoboDeviceEvtDriverContextCleanup;
 
     WDF_DRIVER_CONFIG_INIT(&config,
-                           SmplDeviceEvtDeviceAdd
+                           RoboDeviceEvtDeviceAdd
                            );
 
     status = WdfDriverCreate(DriverObject,
@@ -96,7 +96,7 @@ Return Value:
 }
 
 NTSTATUS
-SmplDeviceEvtDeviceAdd(
+RoboDeviceEvtDeviceAdd(
     _In_    WDFDRIVER       Driver,
     _Inout_ PWDFDEVICE_INIT DeviceInit
     )
@@ -127,7 +127,7 @@ Return Value:
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
 
-    status = SmplDeviceCreateDevice(DeviceInit);
+    status = RoboDeviceCreateDevice(DeviceInit);
 
     TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
 
@@ -135,7 +135,7 @@ Return Value:
 }
 
 VOID
-SmplDeviceEvtDriverContextCleanup(
+RoboDeviceEvtDriverContextCleanup(
     _In_ WDFOBJECT DriverObject
     )
 /*++

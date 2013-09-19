@@ -23,7 +23,6 @@ Environment:
 #include "queue.h"
 #include "trace.h"
 
-
 //
 // WDFDRIVER Events
 //

@@ -4,11 +4,11 @@
 
 [Version]
 Signature="$WINDOWS NT$"
-Class=System ; TODO: edit Class
+Class=System
 ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
 Provider=%ManufacturerName%
-CatalogFile=Robots.cat
-DriverVer=9/1/2013,1.0.1.0
+CatalogFile=Robot.cat
+DriverVer=09/01/2013, 1.0.1.0
 
 [DestinationDirs]
 DefaultDestDir = 12
@@ -27,18 +27,17 @@ RoboBus.sys  = 1,,
 %ManufacturerName%=Standard,NT$ARCH$
 
 [Standard.NT$ARCH$]
-%RoboBus.DeviceDesc%=RoboBus_Device, root\robobus ; TODO: edit hw-id
+%RoboBus.DeviceDesc%=RoboBus_Device, root\robobus
 
 [RoboBus_Device.NT]
 CopyFiles=Drivers_Dir
 
-
-[RoboBus_Device.NT.HW]
+[ToasterStatBus_Device.NT.HW]
 AddReg=ToasterStatBus_Device.NT.AddReg
 
-[RoboBus_Device.NT.AddReg]                            
-HKR,,DeviceCharacteristics,0x10001,0x0100         ; Use same security checks on relative opens
-HKR,,Security,,"D:P(A;;GA;;;BA)(A;;GA;;;SY)"      ; Allow generic-all access to Built-in administrators and Local system 
+[ToasterStatBus_Device.NT.AddReg]                            
+HKR,,DeviceCharacteristics,0x10001,0x0100         ;Use same security checks on relative opens
+HKR,,Security,,"D:P(A;;GA;;;BA)(A;;GA;;;SY)"      ;Allow generic-all access to administrators and Local system
 
 [Drivers_Dir]
 RoboBus.sys
@@ -84,7 +83,6 @@ KmdfLibraryVersion = $KMDFVERSION$
 [Strings]
 SPSVCINST_ASSOCSERVICE= 0x00000002
 ManufacturerName="Uri London Consultants"
-ClassName="Robots bus enumerator"
 DiskName = "RoboBus Installation Disk"
-RoboBus.DeviceDesc = "RoboBus Device Enumerator"
-RoboBus.SVCDESC = "RoboBus Device Enumerator Service"
+RoboBus.DeviceDesc = "RoboBus Enumerator"
+RoboBus.SVCDESC = "RoboBus Enumerator Service"

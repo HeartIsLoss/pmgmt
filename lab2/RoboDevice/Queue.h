@@ -27,13 +27,13 @@ typedef struct _QUEUE_CONTEXT {
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(QUEUE_CONTEXT, QueueGetContext)
 
 NTSTATUS
-SmplDeviceQueueInitialize(
+RoboDeviceQueueInitialize(
     _In_ WDFDEVICE hDevice
     );
 
 //
 // Events from the IoQueue object
 //
-EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL SmplDeviceEvtIoDeviceControl;
-EVT_WDF_IO_QUEUE_IO_STOP SmplDeviceEvtIoStop;
+EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL RoboDeviceEvtIoDeviceControl;
+EVT_WDF_IO_QUEUE_IO_STOP RoboDeviceEvtIoStop;
 
