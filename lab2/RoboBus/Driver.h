@@ -15,8 +15,9 @@ Environment:
 --*/
 
 #define INITGUID
-
+#define NTSTRSAFE_LIB
 #include <ntddk.h>
+#include <ntstrsafe.h>
 #include <wdf.h>
 
 #include "device.h"

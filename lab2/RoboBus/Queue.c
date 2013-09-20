@@ -24,6 +24,7 @@ Environment:
 
 
 NTSTATUS RoboBusPlugInDevice( WDFDEVICE Device, wchar_t* HardwareIds, ULONG SerialNo );
+NTSTATUS RoboBusCreatePdo( WDFDEVICE device, wchar_t* HardwareIds, ULONG SerialNo );
 
 
 
@@ -64,20 +65,11 @@ Return Value:
     // configure-fowarded using WdfDeviceConfigureRequestDispatching to goto
     // other queues get dispatched here.
     //
-    WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(
-         &queueConfig,
-        WdfIoQueueDispatchParallel
-        );
-
+    WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE( &queueConfig, WdfIoQueueDispatchParallel );
     queueConfig.EvtIoDeviceControl = RoboBusEvtIoDeviceControl;
     queueConfig.EvtIoStop = RoboBusEvtIoStop;
 
-    status = WdfIoQueueCreate(
-                 Device,
-                 &queueConfig,
-                 WDF_NO_OBJECT_ATTRIBUTES,
-                 &queue
-                 );
+    status = WdfIoQueueCreate( Device, &queueConfig, WDF_NO_OBJECT_ATTRIBUTES, &queue );
 
     if( !NT_SUCCESS(status) ) {
 		DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "WdfIoQueueCreate failed: %x", status );
@@ -167,6 +159,38 @@ Return Value:
 
 NTSTATUS RoboBusPlugInDevice( WDFDEVICE device, wchar_t* HardwareIds, ULONG SerialNo )
 {
+	FDO_DEVICE_CONTEXT* fdoContext;
+	WDFDEVICE hChild;
+	BOOLEAN unique = TRUE;
+	NTSTATUS status;
+
+	PAGED_CODE();
+
+	fdoContext = getFdoContext(device);
+	hChild = NULL;
+
+	WdfWaitLockAcquire( fdoContext->ChildLock, NULL );
+	WdfFdoLockStaticChildListForIteration( device );
+
+	while( (hChild = WdfFdoRetrieveNextStaticChild(device, hChild, WdfRetrieveAddedChildren)) != NULL )
+	{
+		PDO_DEVICE_CONTEXT* pdoContext;
+
+		pdoContext = getPdoContext( hChild );
+		if( SerialNo == pdoContext->SerialNo ) {
+			unique = FALSE;
+			status = STATUS_INVALID_PARAMETER;
+			break;
+		}
+	}
+
+	if( unique ) {
+		status = RoboBusCreatePdo( device, HardwareIds, SerialNo );
+	}
+
+	WdfFdoUnlockStaticChildListFromIteration( device );
+	WdfWaitLockRelease( fdoContext->ChildLock );
+
 	UNREFERENCED_PARAMETER(device);
 	UNREFERENCED_PARAMETER(HardwareIds);
 	UNREFERENCED_PARAMETER(SerialNo);

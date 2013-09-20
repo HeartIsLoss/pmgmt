@@ -39,7 +39,8 @@ RoboDevice.sys  = 1,,
 %ManufacturerName%=Standard,NT$ARCH$
 
 [Standard.NT$ARCH$]
-%RoboDevice.DeviceDesc%=RoboDevice_Device, Root\RoboDevice ; TODO: edit hw-id
+%RoboDevice.DeviceDesc%=RoboDevice_Device, {4A1B20A7-3232-4932-B45C-8AA64127F525}\Robot
+
 
 [RoboDevice_Device.NT]
 CopyFiles=Drivers_Dir
