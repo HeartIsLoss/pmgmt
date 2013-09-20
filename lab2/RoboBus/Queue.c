@@ -16,10 +16,16 @@ Environment:
 
 #include "driver.h"
 #include "queue.tmh"
+#include "Public.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, RoboBusQueueInitialize)
 #endif
+
+
+NTSTATUS RoboBusPlugInDevice( WDFDEVICE Device, wchar_t* HardwareIds, ULONG SerialNo );
+
+
 
 NTSTATUS
 RoboBusQueueInitialize(
@@ -74,8 +80,7 @@ Return Value:
                  );
 
     if( !NT_SUCCESS(status) ) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_QUEUE, "WdfIoQueueCreate failed %!STATUS!", status);
-        return status;
+		DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "WdfIoQueueCreate failed: %x", status );
     }
 
     return status;
@@ -114,15 +119,61 @@ Return Value:
 
 --*/
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, 
-                TRACE_QUEUE, 
-                "!FUNC! Queue 0x%p, Request 0x%p OutputBufferLength %d InputBufferLength %d IoControlCode %d", 
-                Queue, Request, (int) OutputBufferLength, (int) InputBufferLength, IoControlCode);
+	WDFDEVICE hdevice;
+	BUSENUM_PLUGIN_HARDWARE* pplugin;
+	//BUSENUM_UNPLUG_HARDWARE* punplug;
+	//BUSENUM_EJECT_HARDWARE* peject;
+	size_t length = 0;
+	NTSTATUS status;
 
-    WdfRequestComplete(Request, STATUS_SUCCESS);
+	PAGED_CODE();
+	UNREFERENCED_PARAMETER(OutputBufferLength);
+
+	hdevice = WdfIoQueueGetDevice( Queue );
+	DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_INFO_LEVEL, "RoboBusEvtIoDeviceControl 0x%p\n", hdevice );
+
+	switch( IoControlCode )
+	{
+	case IOCTL_BUSENUM_PLUGIN_HARDWARE:
+		status = WdfRequestRetrieveInputBuffer( Request, sizeof(BUSENUM_PLUGIN_HARDWARE) + sizeof(UNICODE_NULL)*2, (void**)&pplugin, &length );
+
+		if( !NT_SUCCESS(status) ) {
+			DbgPrint( "WdfRequestRetrieveInputBuffer failed 0x%x\n", status );
+			break;
+		}
+
+		if( pplugin->Size == sizeof(BUSENUM_PLUGIN_HARDWARE)  ) {
+			length = ( InputBufferLength - sizeof(BUSENUM_PLUGIN_HARDWARE) ) / sizeof(wchar_t);
+
+			if( ( pplugin->HardwareIDs[ length - 1 ] != UNICODE_NULL ) ||
+				( pplugin->HardwareIDs[ length - 2 ] != UNICODE_NULL ) )
+			{
+				status = STATUS_INVALID_PARAMETER;
+				break;
+			}
+
+			status = RoboBusPlugInDevice( hdevice, pplugin->HardwareIDs, pplugin->SerialNo );
+		}
+		break;
+
+	}
+
+	WdfRequestComplete(Request, STATUS_SUCCESS);
 
     return;
 }
+
+
+
+NTSTATUS RoboBusPlugInDevice( WDFDEVICE device, wchar_t* HardwareIds, ULONG SerialNo )
+{
+	UNREFERENCED_PARAMETER(device);
+	UNREFERENCED_PARAMETER(HardwareIds);
+	UNREFERENCED_PARAMETER(SerialNo);
+	return STATUS_SUCCESS;
+}
+
+
 
 VOID
 RoboBusEvtIoStop(
