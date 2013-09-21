@@ -1,0 +1,95 @@
+;
+; RoboDevice.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=Robot
+ClassGuid={4A1B20A7-3232-4932-B45C-8AA64127F525}
+Provider=%ManufacturerName%
+CatalogFile=Robot.cat
+DriverVer=09/01/2013, 1.0.1.0
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+; ================= Class section =====================
+
+[ClassInstall32]
+Addreg=RobotClassReg
+
+[RobotClassReg]
+HKR,,,0,%ClassName%
+HKR,,Icon,,-5
+HKR,,DeviceCharacteristics,0x10001,0x100                 ;Use same security checks on relative opens
+HKR,,Security,,"D:P(A;;GA;;;SY)(A;;GA;;;BA)(A;;GA;;;LS)" ;Allow generic all access to system, built-in Admin, and Local System.
+
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+RoboDevice.sys  = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%RoboDevice.DeviceDesc%=RoboDevice_Device, {4A1B20A7-3232-4932-B45C-8AA64127F525}\Robot
+
+
+[RoboDevice_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+RoboDevice.sys
+
+;-------------- Service installation
+[RoboDevice_Device.NT.Services]
+AddService = RoboDevice,%SPSVCINST_ASSOCSERVICE%, RoboDevice_Service_Inst
+
+; -------------- RoboDevice driver install sections
+[RoboDevice_Service_Inst]
+DisplayName    = %RoboDevice.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\RoboDevice.sys
+LoadOrderGroup = Extended Base
+
+;
+;--- RoboDevice_Device Coinstaller installation ------
+;
+
+[DestinationDirs]
+RoboDevice_Device_CoInstaller_CopyFiles = 11
+
+[RoboDevice_Device.NT.CoInstallers]
+AddReg=RoboDevice_Device_CoInstaller_AddReg
+CopyFiles=RoboDevice_Device_CoInstaller_CopyFiles
+
+[RoboDevice_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[RoboDevice_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[SourceDisksFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+[RoboDevice_Device.NT.Wdf]
+KmdfService =  RoboDevice, RoboDevice_wdfsect
+[RoboDevice_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Uri London Consultants"
+ClassName="Robot" ; TODO: edit ClassName
+DiskName = "RoboDevice Installation Disk"
+RoboDevice.DeviceDesc = "RoboDevice Device"
+RoboDevice.SVCDESC = "RoboDevice Service"
