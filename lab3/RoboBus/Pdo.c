@@ -9,8 +9,8 @@ NTSTATUS RoboBusCreatePdo( WDFDEVICE device, wchar_t* HardwareIds, ULONG SerialN
 	PDO_DEVICE_CONTEXT* pdoContext = NULL;
 	WDFDEVICE hchild;
 	WDF_OBJECT_ATTRIBUTES attributes;
-	//WDF_DEVICE_PNP_CAPABILITIES pnpCaps;
-	//WDF_DEVICE_POWER_CAPABILITIES powerCaps;
+	WDF_DEVICE_PNP_CAPABILITIES pnpCaps;
+	WDF_DEVICE_POWER_CAPABILITIES powerCaps;
 	UNICODE_STRING deviceId;
 	DECLARE_CONST_UNICODE_STRING( deviceLocation, L"Robot Bus 0" );
     DECLARE_UNICODE_STRING_SIZE( buffer, 80 );
@@ -34,6 +34,7 @@ NTSTATUS RoboBusCreatePdo( WDFDEVICE device, wchar_t* HardwareIds, ULONG SerialN
     status = RtlUnicodeStringPrintf( &buffer, L"Uri_London_Robot_%02d", SerialNo );
     status = WdfPdoInitAddDeviceText( pDeviceInit, &buffer, &deviceLocation, 0x409 );
     WdfPdoInitSetDefaultLocale( pDeviceInit, 0x409 );
+    WdfDeviceInitSetPowerPolicyOwnership( pDeviceInit, TRUE );
 
     WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE( &attributes, PDO_DEVICE_CONTEXT );
 
@@ -41,6 +42,26 @@ NTSTATUS RoboBusCreatePdo( WDFDEVICE device, wchar_t* HardwareIds, ULONG SerialN
 
 	pdoContext = getPdoContext( hchild );
 	pdoContext->SerialNo = SerialNo;
+
+    WDF_DEVICE_PNP_CAPABILITIES_INIT( &pnpCaps );
+    pnpCaps.Removable = WdfTrue;
+    pnpCaps.EjectSupported = WdfTrue;
+    pnpCaps.SurpriseRemovalOK = WdfTrue;
+    pnpCaps.Address = SerialNo;
+    pnpCaps.UINumber = SerialNo;
+    WdfDeviceSetPnpCapabilities( hchild, &pnpCaps );
+
+    WDF_DEVICE_POWER_CAPABILITIES_INIT(&powerCaps);
+    powerCaps.DeviceD1 = WdfTrue;
+    powerCaps.WakeFromD1 = WdfTrue;
+    powerCaps.DeviceWake = PowerDeviceD1;
+    powerCaps.DeviceState[PowerSystemWorking]   = PowerDeviceD0;
+    powerCaps.DeviceState[PowerSystemSleeping1] = PowerDeviceD1;
+    powerCaps.DeviceState[PowerSystemSleeping2] = PowerDeviceD3;
+    powerCaps.DeviceState[PowerSystemSleeping3] = PowerDeviceD3;
+    powerCaps.DeviceState[PowerSystemHibernate] = PowerDeviceD3;
+    powerCaps.DeviceState[PowerSystemShutdown] = PowerDeviceD3;
+    WdfDeviceSetPowerCapabilities( hchild, &powerCaps );
 
 	status = WdfFdoAddStaticChild( device, hchild );
 

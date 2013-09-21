@@ -15,7 +15,6 @@ Environment:
 --*/
 
 #include "driver.h"
-#include "device.tmh"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, RoboDeviceCreateDevice)

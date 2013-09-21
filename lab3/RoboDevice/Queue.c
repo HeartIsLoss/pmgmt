@@ -15,7 +15,6 @@ Environment:
 --*/
 
 #include "driver.h"
-#include "queue.tmh"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, RoboDeviceQueueInitialize)
@@ -74,7 +73,7 @@ Return Value:
                  );
 
     if( !NT_SUCCESS(status) ) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_QUEUE, "WdfIoQueueCreate failed %!STATUS!", status);
+        DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "WdfIoQueuereate filed: %x", status );
         return status;
     }
 
@@ -114,10 +113,10 @@ Return Value:
 
 --*/
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, 
-                TRACE_QUEUE, 
-                "!FUNC! Queue 0x%p, Request 0x%p OutputBufferLength %d InputBufferLength %d IoControlCode %d", 
-                Queue, Request, (int) OutputBufferLength, (int) InputBufferLength, IoControlCode);
+    DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL,
+        "RoboDeviceEvtIoDeviceControl: Queue=%p, Request=%p, OutputBufferLength=%d, InputBufferLength=%d, IoControlCode=%d",
+        Queue, Request, OutputBufferLength, InputBufferLength, IoControlCode
+        );
 
     WdfRequestComplete(Request, STATUS_SUCCESS);
 
@@ -153,11 +152,9 @@ Return Value:
 
 --*/
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, 
-                TRACE_QUEUE, 
-                "!FUNC! Queue 0x%p, Request 0x%p ActionFlags %d", 
-                Queue, Request, ActionFlags);
-
+    UNREFERENCED_PARAMETER(Queue);
+    UNREFERENCED_PARAMETER(Request);
+    UNREFERENCED_PARAMETER(ActionFlags);
     //
     // In most cases, the EvtIoStop callback function completes, cancels, or postpones
     // further processing of the I/O request.

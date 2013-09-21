@@ -15,7 +15,6 @@ Environment:
 --*/
 
 #include "driver.h"
-#include "driver.tmh"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
@@ -59,23 +58,10 @@ Return Value:
     NTSTATUS status;
     WDF_OBJECT_ATTRIBUTES attributes;
 
-    //
-    // Initialize WPP Tracing
-    //
-    WPP_INIT_TRACING( DriverObject, RegistryPath );
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
-
-    //
-    // Register a cleanup callback so that we can call WPP_CLEANUP when
-    // the framework driver object is deleted during driver unload.
-    //
     WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
     attributes.EvtCleanupCallback = RoboDeviceEvtDriverContextCleanup;
 
-    WDF_DRIVER_CONFIG_INIT(&config,
-                           RoboDeviceEvtDeviceAdd
-                           );
+    WDF_DRIVER_CONFIG_INIT( &config, RoboDeviceEvtDeviceAdd );
 
     status = WdfDriverCreate(DriverObject,
                              RegistryPath,
@@ -85,12 +71,10 @@ Return Value:
                              );
 
     if (!NT_SUCCESS(status)) {
-        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DRIVER, "WdfDriverCreate failed %!STATUS!", status);
-        WPP_CLEANUP(DriverObject);
         return status;
     }
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
+    DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "DriverEntry Exit %x", status );
 
     return status;
 }
@@ -120,16 +104,16 @@ Return Value:
 --*/
 {
     NTSTATUS status;
-
     UNREFERENCED_PARAMETER(Driver);
 
     PAGED_CODE();
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
+    DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "RoboDeviceEvtDeviceAdd" );
 
+    WdfDeviceInitSetPowerPolicyOwnership( DeviceInit, FALSE );
     status = RoboDeviceCreateDevice(DeviceInit);
 
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Exit");
+    DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "RoboDeviceEvtDeviceAdd exit %x", status );
 
     return status;
 }
@@ -156,12 +140,5 @@ Return Value:
     UNREFERENCED_PARAMETER(DriverObject);
 
     PAGED_CODE ();
-
-    TraceEvents(TRACE_LEVEL_INFORMATION, TRACE_DRIVER, "%!FUNC! Entry");
-
-    //
-    // Stop WPP Tracing
-    //
-    WPP_CLEANUP( WdfDriverWdmGetDriverObject(DriverObject) );
 
 }

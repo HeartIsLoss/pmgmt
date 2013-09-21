@@ -8,7 +8,7 @@ Class=Robot
 ClassGuid={4A1B20A7-3232-4932-B45C-8AA64127F525}
 Provider=%ManufacturerName%
 CatalogFile=Robot.cat
-DriverVer=09/01/2013, 1.0.1.0
+DriverVer=09/01/2013, 1.0.2.0
 
 [DestinationDirs]
 DefaultDestDir = 12
