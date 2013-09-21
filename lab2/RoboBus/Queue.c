@@ -15,7 +15,6 @@ Environment:
 --*/
 
 #include "driver.h"
-#include "queue.tmh"
 #include "Public.h"
 
 #ifdef ALLOC_PRAGMA
@@ -24,6 +23,10 @@ Environment:
 
 
 NTSTATUS RoboBusPlugInDevice( WDFDEVICE Device, wchar_t* HardwareIds, ULONG SerialNo );
+NTSTATUS RoboBusUnplugDevice( WDFDEVICE device, ULONG SerialNo );
+NTSTATUS RoboBusEjectDevice( WDFDEVICE device, ULONG SerialNo );
+
+
 NTSTATUS RoboBusCreatePdo( WDFDEVICE device, wchar_t* HardwareIds, ULONG SerialNo );
 
 
@@ -113,8 +116,8 @@ Return Value:
 {
 	WDFDEVICE hdevice;
 	BUSENUM_PLUGIN_HARDWARE* pplugin;
-	//BUSENUM_UNPLUG_HARDWARE* punplug;
-	//BUSENUM_EJECT_HARDWARE* peject;
+	BUSENUM_UNPLUG_HARDWARE* punplug;
+	BUSENUM_EJECT_HARDWARE* peject;
 	size_t length = 0;
 	NTSTATUS status;
 
@@ -130,11 +133,12 @@ Return Value:
 		status = WdfRequestRetrieveInputBuffer( Request, sizeof(BUSENUM_PLUGIN_HARDWARE) + sizeof(UNICODE_NULL)*2, (void**)&pplugin, &length );
 
 		if( !NT_SUCCESS(status) ) {
-			DbgPrint( "WdfRequestRetrieveInputBuffer failed 0x%x\n", status );
+			DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "WdfRequestRetrieveInputBuffer failed 0x%x\n", status );
 			break;
 		}
 
-		if( pplugin->Size == sizeof(BUSENUM_PLUGIN_HARDWARE)  ) {
+		if( pplugin->Size == sizeof(BUSENUM_PLUGIN_HARDWARE)  )
+		{
 			length = ( InputBufferLength - sizeof(BUSENUM_PLUGIN_HARDWARE) ) / sizeof(wchar_t);
 
 			if( ( pplugin->HardwareIDs[ length - 1 ] != UNICODE_NULL ) ||
@@ -146,7 +150,51 @@ Return Value:
 
 			status = RoboBusPlugInDevice( hdevice, pplugin->HardwareIDs, pplugin->SerialNo );
 		}
+		else
+		{
+			DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "Incorect size signature %d for plugin request", pplugin->Size );
+			status = STATUS_INVALID_PARAMETER;
+		}
 		break;
+	case IOCTL_BUSENUM_UNPLUG_HARDWARE:
+
+		status = WdfRequestRetrieveInputBuffer( Request, sizeof(BUSENUM_UNPLUG_HARDWARE), (void**)&punplug, &length );
+		if( !NT_SUCCESS(status) ) {
+			DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "WdfRequestRetrieveInputBuffer failed %x\n", status );
+			break;
+		}
+		if( punplug->Size == InputBufferLength )
+		{
+			status = RoboBusUnplugDevice( hdevice, punplug->SerialNo );
+		}
+		else
+		{
+			DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "Incorect size signature %d for plugin request", punplug->Size );
+			status = STATUS_INVALID_PARAMETER;
+		}
+		break;
+
+    case IOCTL_BUSENUM_EJECT_HARDWARE:
+
+        status = WdfRequestRetrieveInputBuffer( Request, sizeof (BUSENUM_EJECT_HARDWARE), (void**)&peject, &length );
+		if( !NT_SUCCESS(status) ) {
+			DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "WdfRequestRetrieveInputBuffer failed %x\n", status );
+			break;
+		}
+        if( peject->Size == InputBufferLength )
+        {
+            status= RoboBusEjectDevice( hdevice, peject->SerialNo );
+        }
+		else
+		{
+			DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "Incorect size signature %d for plugin request", peject->Size );
+			status = STATUS_INVALID_PARAMETER;
+		}
+        break;
+
+    default:
+		status = STATUS_INVALID_PARAMETER;
+        break;
 
 	}
 
@@ -198,6 +246,91 @@ NTSTATUS RoboBusPlugInDevice( WDFDEVICE device, wchar_t* HardwareIds, ULONG Seri
 }
 
 
+NTSTATUS RoboBusUnplugDevice( WDFDEVICE device, ULONG SerialNo )
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	BOOLEAN fUnplugAll;
+	WDFDEVICE hchild = NULL;
+	BOOLEAN fFound = FALSE;
+
+	PAGED_CODE();
+
+	fUnplugAll = ( SerialNo == 0 ) ? TRUE : FALSE;
+
+	WdfFdoLockStaticChildListForIteration( device );
+
+	while( ( hchild = WdfFdoRetrieveNextStaticChild(device, hchild, WdfRetrieveAddedChildren) ) != NULL )
+	{
+		if( fUnplugAll ) {
+
+            status = WdfPdoMarkMissing( hchild );
+            if(!NT_SUCCESS(status)) {
+				DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "WdfPdoMarkMissing failed 0x%x\n", status );
+				break;
+			}
+
+			fFound = TRUE;
+        }
+
+        else
+		{
+			PDO_DEVICE_CONTEXT* pdoContext = getPdoContext( hchild );
+			if( SerialNo == pdoContext->SerialNo ) {
+
+				status = WdfPdoMarkMissing( hchild );
+				if(!NT_SUCCESS(status)) {
+					DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_ERROR_LEVEL, "WdfPdoMarkMissing failed 0x%x\n", status );
+					break;
+				}
+
+				fFound = TRUE;
+				break;
+			}
+		}
+    }
+
+    WdfFdoUnlockStaticChildListFromIteration( device );
+
+	if( NT_SUCCESS(status) ) {
+	    status = fFound ? STATUS_SUCCESS : STATUS_INVALID_PARAMETER;
+	}
+
+	return status;
+}
+
+
+
+NTSTATUS RoboBusEjectDevice( WDFDEVICE device, ULONG SerialNo )
+{
+	NTSTATUS status = STATUS_SUCCESS;
+    BOOLEAN fEjectAll;
+	WDFDEVICE hchild = NULL;
+
+	PAGED_CODE();
+
+	fEjectAll = ( SerialNo == 0 ) ? TRUE : FALSE;
+
+	WdfFdoLockStaticChildListForIteration( device );
+
+	while( ( hchild = WdfFdoRetrieveNextStaticChild(device, hchild, WdfRetrieveAddedChildren) ) != NULL )
+	{
+        PDO_DEVICE_CONTEXT* pdoContext = getPdoContext( hchild );
+
+		if( fEjectAll || SerialNo == pdoContext->SerialNo ) {
+            WdfPdoRequestEject( hchild );
+            if( !fEjectAll ) {
+                break;
+            }
+        }
+
+    }
+
+    WdfFdoUnlockStaticChildListFromIteration( device );
+
+
+	return status;
+}
+
 
 VOID
 RoboBusEvtIoStop(
@@ -228,10 +361,7 @@ Return Value:
 
 --*/
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, 
-                TRACE_QUEUE, 
-                "!FUNC! Queue 0x%p, Request 0x%p ActionFlags %d", 
-                Queue, Request, ActionFlags);
+	DbgPrintEx( DPFLTR_IHVBUS_ID, DPFLTR_INFO_LEVEL, "RoboBusEvtIoStop: Queue %p, Request %p, ActionFlags %d", Queue, Request, ActionFlags );
 
     //
     // In most cases, the EvtIoStop callback function completes, cancels, or postpones

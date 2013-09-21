@@ -108,6 +108,7 @@ int main( int argc, char* argv[] )
 		ULONG bytes;
 
 		unplug.Size = bytes = sizeof(unplug);
+        unplug.SerialNo = SerialNo;
 		bresult = DeviceIoControl( hfile, IOCTL_BUSENUM_UNPLUG_HARDWARE, &unplug, bytes, NULL, 0, &bytes, NULL );
 		if( !bresult ) {
 			throw std::exception( "Failed DeviceIoControl", GetLastError() );
@@ -119,6 +120,7 @@ int main( int argc, char* argv[] )
 		ULONG bytes;
 
 		eject.Size = bytes = sizeof(eject);
+        eject.SerialNo = SerialNo;
 		bresult = DeviceIoControl( hfile, IOCTL_BUSENUM_EJECT_HARDWARE, &eject, bytes, NULL, 0, &bytes, NULL );
 		if( !bresult ) {
 			throw std::exception( "Failed DeviceIoControl", GetLastError() );
