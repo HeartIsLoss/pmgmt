@@ -19,12 +19,12 @@ NTSTATUS DriverEntry(
 	DriverObject->DriverUnload = DriverUnload;
 	DriverObject->DriverExtension->AddDevice = AddDevice;
 
-	DriverObject->MajorFunction[IRP_MJ_CREATE] = PsdoDispatchCreate;
-	DriverObject->MajorFunction[IRP_MJ_CLOSE] = PsdoDispatchClose;
-	DriverObject->MajorFunction[IRP_MJ_READ] =  PsdoDispatchRead;
-	DriverObject->MajorFunction[IRP_MJ_WRITE] =  PsdoDispatchWrite;
-	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = PsdoDispatchDeviceControl;
-	DriverObject->MajorFunction[IRP_MJ_POWER] = PsdoDispatchPower;
+	DriverObject->MajorFunction[IRP_MJ_CREATE] = SwdmDispatchCreate;
+	DriverObject->MajorFunction[IRP_MJ_CLOSE] = SwdmDispatchClose;
+	DriverObject->MajorFunction[IRP_MJ_READ] =  SwdmDispatchRead;
+	DriverObject->MajorFunction[IRP_MJ_WRITE] =  SwdmDispatchWrite;
+	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = SwdmDispatchDeviceControl;
+	DriverObject->MajorFunction[IRP_MJ_POWER] = SwdmDispatchPower;
 	DriverObject->MajorFunction[IRP_MJ_PNP] = SwdmDispatchPnP;
 
 	return STATUS_SUCCESS;
@@ -135,47 +135,47 @@ VOID
 }
 
 NTSTATUS
-  PsdoDispatchCreate(
+  SwdmDispatchCreate(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     )
 {
-	PIO_STACK_LOCATION p_IO_STK;
+	PIO_STACK_LOCATION pStk;
 	PDEVICE_EXTENSION pCtx;
 	NTSTATUS status;
 
-	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
+	pStk = IoGetCurrentIrpStackLocation(Irp);
 	pCtx = DeviceObject->DeviceExtension;
-	status = IoAcquireRemoveLock(&pCtx->RemoveLock, p_IO_STK->FileObject);
+	status = IoAcquireRemoveLock(&pCtx->RemoveLock, pStk->FileObject);
 	if (NT_SUCCESS(status)) {
 		CompleteRequest(Irp, STATUS_SUCCESS, 0);
 		return STATUS_SUCCESS;
 	} else {
-		IoReleaseRemoveLock(&pCtx->RemoveLock, p_IO_STK->FileObject);
+		IoReleaseRemoveLock(&pCtx->RemoveLock, pStk->FileObject);
 		CompleteRequest(Irp, status, 0);
 		return status;
 	}
 }
 
 NTSTATUS
-  PsdoDispatchClose(
+SwdmDispatchClose(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     )
 {
-	PIO_STACK_LOCATION p_IO_STK;
+	PIO_STACK_LOCATION pStk;
 	PDEVICE_EXTENSION pCtx;
 
-	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
+	pStk = IoGetCurrentIrpStackLocation(Irp);
 	pCtx = DeviceObject->DeviceExtension;
 	IoReleaseRemoveLock(&pCtx->RemoveLock, 
-		p_IO_STK->FileObject);
+		pStk->FileObject);
 	CompleteRequest(Irp, STATUS_SUCCESS, 0);
 	return STATUS_SUCCESS;
 }
 
 NTSTATUS
-  PsdoDispatchRead(
+SwdmDispatchRead(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     )
@@ -186,17 +186,17 @@ NTSTATUS
 	PVOID DataBuf;  //Buffer provided by Driver
 	ULONG DataLen;  //Buffer length for Driver Data Buffer
 	ULONG ByteTransferred;
-	PIO_STACK_LOCATION p_IO_STK;
+	PIO_STACK_LOCATION pStk;
 	PDEVICE_EXTENSION pCtx;
 
 	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IRP_MJ_READ : Begin\r\n");
 	//Get I/o Stack Location & Device Extension
-	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
+	pStk = IoGetCurrentIrpStackLocation(Irp);
 	pCtx = DeviceObject->DeviceExtension;
 
 	//Get User Output Buffer & Length 
-	BufLen = p_IO_STK->Parameters.Read.Length;
-	Offset = p_IO_STK->Parameters.Read.ByteOffset.QuadPart;
+	BufLen = pStk->Parameters.Read.Length;
+	Offset = pStk->Parameters.Read.ByteOffset.QuadPart;
 	Buf = (PUCHAR)(Irp->AssociatedIrp.SystemBuffer) + Offset;
 
 	//Get Driver Data Buffer & Length
@@ -229,7 +229,7 @@ NTSTATUS
 }
 
 NTSTATUS
-  PsdoDispatchWrite(
+SwdmDispatchWrite(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     )
@@ -240,19 +240,19 @@ NTSTATUS
 	PVOID DataBuf;  //Buffer provided by Driver
 	ULONG DataLen;  //Buffer length for Driver Data Buffer
 	ULONG ByteTransferred;
-	PIO_STACK_LOCATION p_IO_STK;
+	PIO_STACK_LOCATION pStk;
 	PDEVICE_EXTENSION pCtx;
 	//NTSTATUS status;
 
 	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IRP_MJ_WRITE : Begin\r\n");
 
 	//Get I/o Stack Location & Device Extension
-	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
+	pStk = IoGetCurrentIrpStackLocation(Irp);
 	pCtx = DeviceObject->DeviceExtension;
 
 	//Get User Input Buffer & Length 
-	BufLen = p_IO_STK->Parameters.Write.Length;
-	Offset = p_IO_STK->Parameters.Read.ByteOffset.QuadPart;
+	BufLen = pStk->Parameters.Write.Length;
+	Offset = pStk->Parameters.Read.ByteOffset.QuadPart;
 	Buf = (PUCHAR)(Irp->AssociatedIrp.SystemBuffer) + Offset;
 
 	//Get Driver Data Buffer & Length
@@ -288,24 +288,24 @@ NTSTATUS
 }
 
 NTSTATUS
-  PsdoDispatchDeviceControl(
+  SwdmDispatchDeviceControl(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     )
 {
 	ULONG code, cbin, cbout, info, pwrinf_size;
-	PIO_STACK_LOCATION p_IO_STK;
+	PIO_STACK_LOCATION pStk;
 	PDEVICE_EXTENSION pCtx;
 	//PDEVICE_POWER_INFORMATION pValue;
 	ULONG IdxPwrState;
 	NTSTATUS status;
 
 	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IRP_MJ_DEVICE_IO_CONTROL : Begin\r\n");
-	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
+	pStk = IoGetCurrentIrpStackLocation(Irp);
 	pCtx = DeviceObject->DeviceExtension;
-	code = p_IO_STK->Parameters.DeviceIoControl.IoControlCode;
-	cbin = p_IO_STK->Parameters.DeviceIoControl.InputBufferLength;
-	cbout = p_IO_STK->Parameters.DeviceIoControl.OutputBufferLength;
+	code = pStk->Parameters.DeviceIoControl.IoControlCode;
+	cbin = pStk->Parameters.DeviceIoControl.InputBufferLength;
+	cbout = pStk->Parameters.DeviceIoControl.OutputBufferLength;
 	IoAcquireRemoveLock(&pCtx->RemoveLock, Irp);
 
 	switch(code)

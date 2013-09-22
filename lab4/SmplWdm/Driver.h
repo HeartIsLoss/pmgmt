@@ -4,7 +4,7 @@
 typedef struct tagDEVICE_EXTENSION
 {
 	PDEVICE_OBJECT DeviceObject;		// device object this driver creates
-	PDEVICE_OBJECT NextDeviceObject;	// next-layered device object in this device stack
+	PDEVICE_OBJECT NextDeviceObject;	// next- device object in this device stack
 	DEVICE_CAPABILITIES pdc;		// device capability
     PNP_BUS_INFORMATION* pBusInfo;
 	IO_REMOVE_LOCK RemoveLock;		// removal control locking structure
@@ -75,75 +75,75 @@ VOID
     ); 
 
 NTSTATUS
-  PsdoDispatchCreate(
+  SwdmDispatchCreate(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     );
 
 NTSTATUS
-  PsdoDispatchClose(
+  SwdmDispatchClose(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     );
 
 NTSTATUS
-  PsdoDispatchRead(
+  SwdmDispatchRead(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     );
 
 NTSTATUS
-  PsdoDispatchWrite(
+  SwdmDispatchWrite(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     );
 
 NTSTATUS
-  PsdoDispatchDeviceControl(
+SwdmDispatchDeviceControl(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     );
 
 
 
-// ------------------------------------- PM
+// -------------------------------------Power
 
 NTSTATUS
-  PsdoDispatchPower(
+SwdmDispatchPower(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     );
 
 NTSTATUS
-  CompletionQuerySystemPower(
+CompletionQuerySystemPower(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp,
     IN PVOID  Context
     );
 
 NTSTATUS
-  CompletionQueryDevicePower(
+CompletionQueryDevicePower(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp,
     IN PVOID  Context
     );
 
 NTSTATUS
-  CompletionSetSystemPower(
+CompletionSetSystemPower(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp,
     IN PVOID  Context
     );
 
 NTSTATUS
-  CompletionDevicePowerUp(
+CompletionDevicePowerUp(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp,
     IN PVOID  Context
     );
 
 VOID
-  CallBackForRequestPower (
+CallBackForRequestPower (
     IN PDEVICE_OBJECT DeviceObject,
     IN UCHAR MinorFunction,
     IN POWER_STATE PowerState,
@@ -152,7 +152,7 @@ VOID
     );
 
 VOID
-  CallBackForSetPower (
+CallBackForSetPower (
     IN PDEVICE_OBJECT DeviceObject,
     IN UCHAR MinorFunction,
     IN POWER_STATE PowerState,
@@ -161,7 +161,7 @@ VOID
     );
 
 
-// -------------------------------------------------------------------
+// ----------------------------------------------PnP
 
 NTSTATUS
 SwdmDispatchPnP(

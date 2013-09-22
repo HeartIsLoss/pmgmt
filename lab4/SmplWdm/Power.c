@@ -4,7 +4,7 @@
 extern PDEVICE_POWER_INFORMATION Global_PowerInfo_Ptr;
 
 NTSTATUS
-  PsdoDispatchPower(
+SwdmDispatchPower(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     )
