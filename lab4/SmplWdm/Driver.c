@@ -25,7 +25,7 @@ NTSTATUS DriverEntry(
 	DriverObject->MajorFunction[IRP_MJ_WRITE] =  PsdoDispatchWrite;
 	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = PsdoDispatchDeviceControl;
 	DriverObject->MajorFunction[IRP_MJ_POWER] = PsdoDispatchPower;
-	DriverObject->MajorFunction[IRP_MJ_PNP] = PsdoDispatchPnP;
+	DriverObject->MajorFunction[IRP_MJ_PNP] = SwdmDispatchPnP;
 
 	return STATUS_SUCCESS;
 }
@@ -37,7 +37,7 @@ NTSTATUS AddDevice(
     )
 {
 	ULONG DeviceExtensionSize;
-	PDEVICE_EXTENSION p_DVCEXT;
+	PDEVICE_EXTENSION pCtx;
 	PDEVICE_OBJECT ptr_PDO;
 	NTSTATUS status;
 	ULONG IdxPwrState;
@@ -60,26 +60,26 @@ NTSTATUS AddDevice(
 	if (NT_SUCCESS(status)) {
 		ptr_PDO->Flags &= ~DO_DEVICE_INITIALIZING;
 		ptr_PDO->Flags |= DO_BUFFERED_IO;
-		p_DVCEXT = ptr_PDO->DeviceExtension;
-		p_DVCEXT->DeviceObject = ptr_PDO;
+		pCtx = ptr_PDO->DeviceExtension;
+		pCtx->DeviceObject = ptr_PDO;
 		RtlInitUnicodeString(
-			&p_DVCEXT->Device_Description,
+			&pCtx->Device_Description,
 			L"This is a Buffered I/O Driver for Pseudo Device\r\n"
 			L"Created by mjtsai 2003/8/1\r\n");
 		IoInitializeRemoveLock(
-			&p_DVCEXT->RemoveLock,
+			&pCtx->RemoveLock,
 			'KCOL',
 			0,
 			0
 		);
-		p_DVCEXT->DataBuffer = ExAllocatePool(
+		pCtx->DataBuffer = ExAllocatePool(
 			NonPagedPool, 1024);
 		RtlZeroMemory(
-			p_DVCEXT->DataBuffer,
+			pCtx->DataBuffer,
 			1024);
 		//Initialize driver power state
-		p_DVCEXT->SysPwrState = PowerSystemWorking;
-		p_DVCEXT->DevPwrState = PowerDeviceD0;
+		pCtx->SysPwrState = PowerSystemWorking;
+		pCtx->DevPwrState = PowerDeviceD0;
 		
 		//Initialize device power information
 		Global_PowerInfo_Ptr = ExAllocatePool(
@@ -104,7 +104,7 @@ NTSTATUS AddDevice(
 		}
 		//Store next-layered device object
 		//Attach device object to device stack
-		p_DVCEXT->NextDeviceObject = 
+		pCtx->NextDeviceObject = 
 			IoAttachDeviceToDeviceStack(ptr_PDO, PhysicalDeviceObject);
 	}
 
@@ -116,21 +116,21 @@ VOID
     IN PDRIVER_OBJECT  DriverObject 
     )
 {
-	PDEVICE_EXTENSION p_DVCEXT;
+	PDEVICE_EXTENSION pCtx;
 
-	DbgPrint("In DriverUnload : Begin\r\n");
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "In DriverUnload : Begin\r\n");
 
-	p_DVCEXT = DriverObject->DeviceObject->DeviceExtension;
+	pCtx = (DEVICE_EXTENSION*)DriverObject->DeviceObject->DeviceExtension;
 	ExFreePool(Global_PowerInfo_Ptr);
 	RtlFreeUnicodeString(&Global_sz_Drv_RegInfo);
 	RtlFreeUnicodeString(
-		&p_DVCEXT->Device_Description);
+		&pCtx->Device_Description);
 	IoDetachDevice(
-		p_DVCEXT->DeviceObject);
+		pCtx->DeviceObject);
 	IoDeleteDevice(
-		p_DVCEXT->NextDeviceObject);
+		pCtx->NextDeviceObject);
 
-	DbgPrint("In DriverUnload : End\r\n");
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "In DriverUnload : End\r\n");
 	return;
 }
 
@@ -141,17 +141,17 @@ NTSTATUS
     )
 {
 	PIO_STACK_LOCATION p_IO_STK;
-	PDEVICE_EXTENSION p_DVCEXT;
+	PDEVICE_EXTENSION pCtx;
 	NTSTATUS status;
 
 	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
-	p_DVCEXT = DeviceObject->DeviceExtension;
-	status = IoAcquireRemoveLock(&p_DVCEXT->RemoveLock, p_IO_STK->FileObject);
+	pCtx = DeviceObject->DeviceExtension;
+	status = IoAcquireRemoveLock(&pCtx->RemoveLock, p_IO_STK->FileObject);
 	if (NT_SUCCESS(status)) {
 		CompleteRequest(Irp, STATUS_SUCCESS, 0);
 		return STATUS_SUCCESS;
 	} else {
-		IoReleaseRemoveLock(&p_DVCEXT->RemoveLock, p_IO_STK->FileObject);
+		IoReleaseRemoveLock(&pCtx->RemoveLock, p_IO_STK->FileObject);
 		CompleteRequest(Irp, status, 0);
 		return status;
 	}
@@ -164,11 +164,11 @@ NTSTATUS
     )
 {
 	PIO_STACK_LOCATION p_IO_STK;
-	PDEVICE_EXTENSION p_DVCEXT;
+	PDEVICE_EXTENSION pCtx;
 
 	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
-	p_DVCEXT = DeviceObject->DeviceExtension;
-	IoReleaseRemoveLock(&p_DVCEXT->RemoveLock, 
+	pCtx = DeviceObject->DeviceExtension;
+	IoReleaseRemoveLock(&pCtx->RemoveLock, 
 		p_IO_STK->FileObject);
 	CompleteRequest(Irp, STATUS_SUCCESS, 0);
 	return STATUS_SUCCESS;
@@ -187,12 +187,12 @@ NTSTATUS
 	ULONG DataLen;  //Buffer length for Driver Data Buffer
 	ULONG ByteTransferred;
 	PIO_STACK_LOCATION p_IO_STK;
-	PDEVICE_EXTENSION p_DVCEXT;
+	PDEVICE_EXTENSION pCtx;
 
-	DbgPrint("IRP_MJ_READ : Begin\r\n");
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IRP_MJ_READ : Begin\r\n");
 	//Get I/o Stack Location & Device Extension
 	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
-	p_DVCEXT = DeviceObject->DeviceExtension;
+	pCtx = DeviceObject->DeviceExtension;
 
 	//Get User Output Buffer & Length 
 	BufLen = p_IO_STK->Parameters.Read.Length;
@@ -200,16 +200,16 @@ NTSTATUS
 	Buf = (PUCHAR)(Irp->AssociatedIrp.SystemBuffer) + Offset;
 
 	//Get Driver Data Buffer & Length
-	DataBuf = p_DVCEXT->DataBuffer;
+	DataBuf = pCtx->DataBuffer;
 	if (DataBuf == NULL)
 		DataLen = 0;
 	else
 		DataLen = 1024;
 
-	IoAcquireRemoveLock(&p_DVCEXT->RemoveLock, Irp);
+	IoAcquireRemoveLock(&pCtx->RemoveLock, Irp);
 
-	DbgPrint("Output Buffer Length : %d\r\n", BufLen);
-	DbgPrint("Driver Data Length : %d\r\n", DataLen);
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Output Buffer Length : %d\r\n", BufLen);
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Driver Data Length : %d\r\n", DataLen);
 	//
 	if (BufLen <= DataLen) {
 		ByteTransferred = BufLen;	
@@ -221,10 +221,10 @@ NTSTATUS
 		Buf, DataBuf, 
 		ByteTransferred);
 
-	IoReleaseRemoveLock(&p_DVCEXT->RemoveLock, Irp);
+	IoReleaseRemoveLock(&pCtx->RemoveLock, Irp);
 	CompleteRequest(Irp, STATUS_SUCCESS, ByteTransferred);
 
-	DbgPrint("IRP_MJ_READ : End\r\n");
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IRP_MJ_READ : End\r\n");
 	return STATUS_SUCCESS;
 }
 
@@ -241,14 +241,14 @@ NTSTATUS
 	ULONG DataLen;  //Buffer length for Driver Data Buffer
 	ULONG ByteTransferred;
 	PIO_STACK_LOCATION p_IO_STK;
-	PDEVICE_EXTENSION p_DVCEXT;
+	PDEVICE_EXTENSION pCtx;
 	//NTSTATUS status;
 
-	DbgPrint("IRP_MJ_WRITE : Begin\r\n");
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IRP_MJ_WRITE : Begin\r\n");
 
 	//Get I/o Stack Location & Device Extension
 	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
-	p_DVCEXT = DeviceObject->DeviceExtension;
+	pCtx = DeviceObject->DeviceExtension;
 
 	//Get User Input Buffer & Length 
 	BufLen = p_IO_STK->Parameters.Write.Length;
@@ -256,13 +256,13 @@ NTSTATUS
 	Buf = (PUCHAR)(Irp->AssociatedIrp.SystemBuffer) + Offset;
 
 	//Get Driver Data Buffer & Length
-	DataBuf = p_DVCEXT->DataBuffer;
+	DataBuf = pCtx->DataBuffer;
 	DataLen = 1024;
 	
-	IoAcquireRemoveLock(&p_DVCEXT->RemoveLock, Irp);
+	IoAcquireRemoveLock(&pCtx->RemoveLock, Irp);
 
-	DbgPrint("Input Buffer Length : %d\r\n", BufLen);
-	DbgPrint("Driver Data Length : %d\r\n", DataLen);
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Input Buffer Length : %d\r\n", BufLen);
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Driver Data Length : %d\r\n", DataLen);
 
 	if (BufLen <= DataLen) {
 		ByteTransferred = BufLen;	
@@ -272,7 +272,7 @@ NTSTATUS
 
 	ByteTransferred = BufLen;
 	RtlZeroMemory(
-		p_DVCEXT->DataBuffer,
+		pCtx->DataBuffer,
 		1024);
 
 	RtlCopyMemory(
@@ -280,10 +280,10 @@ NTSTATUS
 		Buf, 
 		ByteTransferred);
 
-	IoReleaseRemoveLock(&p_DVCEXT->RemoveLock, Irp);
+	IoReleaseRemoveLock(&pCtx->RemoveLock, Irp);
 	CompleteRequest(Irp, STATUS_SUCCESS, ByteTransferred);
 
-	DbgPrint("IRP_MJ_WRITE : End\r\n");
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IRP_MJ_WRITE : End\r\n");
 	return STATUS_SUCCESS;
 }
 
@@ -295,31 +295,31 @@ NTSTATUS
 {
 	ULONG code, cbin, cbout, info, pwrinf_size;
 	PIO_STACK_LOCATION p_IO_STK;
-	PDEVICE_EXTENSION p_DVCEXT;
+	PDEVICE_EXTENSION pCtx;
 	//PDEVICE_POWER_INFORMATION pValue;
 	ULONG IdxPwrState;
 	NTSTATUS status;
 
-	DbgPrint("IRP_MJ_DEVICE_IO_CONTROL : Begin\r\n");
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IRP_MJ_DEVICE_IO_CONTROL : Begin\r\n");
 	p_IO_STK = IoGetCurrentIrpStackLocation(Irp);
-	p_DVCEXT = DeviceObject->DeviceExtension;
+	pCtx = DeviceObject->DeviceExtension;
 	code = p_IO_STK->Parameters.DeviceIoControl.IoControlCode;
 	cbin = p_IO_STK->Parameters.DeviceIoControl.InputBufferLength;
 	cbout = p_IO_STK->Parameters.DeviceIoControl.OutputBufferLength;
-	IoAcquireRemoveLock(&p_DVCEXT->RemoveLock, Irp);
+	IoAcquireRemoveLock(&pCtx->RemoveLock, Irp);
 
 	switch(code)
 	{
 	case IOCTL_READ_DEVICE_INFO:
-		if (p_DVCEXT->Device_Description.Length > cbout) {
-			cbout = p_DVCEXT->Device_Description.Length;
+		if (pCtx->Device_Description.Length > cbout) {
+			cbout = pCtx->Device_Description.Length;
 			info = cbout;
 		} else {
-			info = p_DVCEXT->Device_Description.Length;
+			info = pCtx->Device_Description.Length;
 		}
 			
 		RtlCopyMemory(Irp->AssociatedIrp.SystemBuffer,
-			p_DVCEXT->Device_Description.Buffer,
+			pCtx->Device_Description.Buffer,
 			info);
 		status = STATUS_SUCCESS;
 		break;
@@ -333,21 +333,21 @@ NTSTATUS
 			info = pwrinf_size;
 		}
 		//Display Related Device Power State
-		DbgPrint("Support Query Device Capability : %$r\n",
+		DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Support Query Device Capability : %$r\n",
 			Global_PowerInfo_Ptr->SupportQueryCapability ? "Yes" : "No");
-		DbgPrint("DeviceD1 : %d\r\n", Global_PowerInfo_Ptr->DeviceD1);
-		DbgPrint("DeviceD2 : %d\r\n", Global_PowerInfo_Ptr->DeviceD2);
-		DbgPrint("WakeFromD0 : %d\r\n", Global_PowerInfo_Ptr->WakeFromD0);
-		DbgPrint("WakeFromD1 : %d\r\n", Global_PowerInfo_Ptr->WakeFromD1);
-		DbgPrint("WakeFromD2 : %d\r\n", Global_PowerInfo_Ptr->WakeFromD2);
-		DbgPrint("WakeFromD3 : %d\r\n", Global_PowerInfo_Ptr->WakeFromD3);
-		DbgPrint("SystemWake : %d\r\n", Global_PowerInfo_Ptr->SystemWake);
-		DbgPrint("DeviceWake : %d\r\n", Global_PowerInfo_Ptr->DeviceWake);
+		DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "DeviceD1 : %d\r\n", Global_PowerInfo_Ptr->DeviceD1);
+		DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "DeviceD2 : %d\r\n", Global_PowerInfo_Ptr->DeviceD2);
+		DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WakeFromD0 : %d\r\n", Global_PowerInfo_Ptr->WakeFromD0);
+		DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WakeFromD1 : %d\r\n", Global_PowerInfo_Ptr->WakeFromD1);
+		DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WakeFromD2 : %d\r\n", Global_PowerInfo_Ptr->WakeFromD2);
+		DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "WakeFromD3 : %d\r\n", Global_PowerInfo_Ptr->WakeFromD3);
+		DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "SystemWake : %d\r\n", Global_PowerInfo_Ptr->SystemWake);
+		DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "DeviceWake : %d\r\n", Global_PowerInfo_Ptr->DeviceWake);
 		for (IdxPwrState = 0;
 			IdxPwrState < PowerSystemMaximum;
 			IdxPwrState++)
 		{
-			DbgPrint("DeviceState[%d] : %d\r\n", 
+			DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "DeviceState[%d] : %d\r\n", 
 				IdxPwrState, 
 				Global_PowerInfo_Ptr->DeviceState[IdxPwrState]);
 		}
@@ -383,9 +383,9 @@ NTSTATUS
 		break;
 	}
 
-	IoReleaseRemoveLock(&p_DVCEXT->RemoveLock, Irp);
+	IoReleaseRemoveLock(&pCtx->RemoveLock, Irp);
 
 	CompleteRequest(Irp, STATUS_SUCCESS, info);
-	DbgPrint("IRP_MJ_DEVICE_IO_CONTROL : End\r\n");
+	DbgPrintEx( DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "IRP_MJ_DEVICE_IO_CONTROL : End\r\n");
 	return status;
 }

@@ -49,7 +49,7 @@ typedef struct tagDEVICE_POWER_INFORMATION {
 		 FILE_ANY_ACCESS)
 
 NTSTATUS
-  CompleteRequest(
+CompleteRequest(
 		IN PIRP Irp,
 		IN NTSTATUS status,
 		IN ULONG_PTR info);
@@ -164,7 +164,7 @@ VOID
 // -------------------------------------------------------------------
 
 NTSTATUS
-  PsdoDispatchPnP(
+SwdmDispatchPnP(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     );
