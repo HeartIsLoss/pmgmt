@@ -1,0 +1,57 @@
+;
+; SmplWdm.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGuid={4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider=%ManufacturerName%
+CatalogFile=SmplWdm.cat
+DriverVer=09/01/2013, 1.0.2.0
+
+[DestinationDirs]
+DefaultDestDir = 12
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+SmplWdm.sys  = 1,,
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%SmplWdm.DeviceDesc%=RoboBus_Device, *SmplWdm2000
+
+[RoboBus_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+SmplWdm.sys
+
+;-------------- Service installation
+[RoboBus_Device.NT.Services]
+AddService = SmplWdm,%SPSVCINST_ASSOCSERVICE%, SmplWdm_Service_Inst
+
+; -------------- RoboBus driver install sections
+[SmplWdm_Service_Inst]
+DisplayName    = %SmplWdm.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\SmplWdm.sys
+LoadOrderGroup = Extended Base
+
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="Uri London Consultants"
+DiskName = "SmplWdm Installation Disk"
+SmplWdm.DeviceDesc = "Simple Wdm"
+SmplWdm.SVCDESC = "Simple Wdm Service"
