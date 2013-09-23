@@ -19,7 +19,7 @@ SwdmDispatchPower(
 
 	pStk = IoGetCurrentIrpStackLocation(Irp);
 	IRP_MN_Code = pStk->MinorFunction;
-	pCtx = DeviceObject->DeviceExtension;
+	pCtx = (DEVICE_EXTENSION*)DeviceObject->DeviceExtension;
 	Status = IoAcquireRemoveLock(&pCtx->RemoveLock, Irp);
 	switch (IRP_MN_Code)
 	{

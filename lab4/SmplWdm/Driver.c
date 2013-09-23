@@ -111,8 +111,8 @@ NTSTATUS AddDevice(
 	return status;
 }
 
-VOID 
-  DriverUnload( 
+VOID
+DriverUnload( 
     IN PDRIVER_OBJECT  DriverObject 
     )
 {
@@ -135,7 +135,7 @@ VOID
 }
 
 NTSTATUS
-  SwdmDispatchCreate(
+SwdmDispatchCreate(
     IN PDEVICE_OBJECT  DeviceObject,
     IN PIRP  Irp
     )
