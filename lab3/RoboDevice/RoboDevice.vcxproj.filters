@@ -45,6 +45,9 @@
     <ClCompile Include="Queue.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Power.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="RoboDevice.inx">

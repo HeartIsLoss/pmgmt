@@ -53,6 +53,7 @@
   <ItemGroup>
     <ClCompile Include="Device.c" />
     <ClCompile Include="Driver.c" />
+    <ClCompile Include="Power.c" />
     <ClCompile Include="Queue.c" />
   </ItemGroup>
   <ItemGroup>

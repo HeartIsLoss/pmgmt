@@ -11,8 +11,8 @@ typedef struct tagDEVICE_EXTENSION
 	LONG handles;				// # open handles
 	PVOID DataBuffer;                       // Internal Buffer for Read/Write I/O
 	UNICODE_STRING Device_Description;	// Device Description
-        SYSTEM_POWER_STATE SysPwrState;		// Current System Power State
-        DEVICE_POWER_STATE DevPwrState;		// Current Device Power State
+    SYSTEM_POWER_STATE SysPwrState;		// Current System Power State
+    DEVICE_POWER_STATE DevPwrState;		// Current Device Power State
 	PIRP PowerIrp;				// Current Handling Power-Related IRP
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
