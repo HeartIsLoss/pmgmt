@@ -63,7 +63,7 @@ Return Value:
     }
 
 
-    scope {
+    {
         // power policy callback used to arm/disarm hardware to handle wait-wake
         WDF_POWER_POLICY_EVENT_CALLBACKS powerPolicyCallbacks;
         WDF_POWER_POLICY_EVENT_CALLBACKS_INIT( &powerPolicyCallbacks );
@@ -96,7 +96,8 @@ Return Value:
     }
 
     status = RoboDeviceQueueInitialize( device );
-
+	
+	/*
 
     scope {
         WDF_DEVICE_POWER_POLICY_IDLE_SETTINGS idleSettings;
@@ -105,12 +106,14 @@ Return Value:
         status = WdfDeviceAssignS0IdleSettings( device, &idleSettings );
     }
 
-
     scope {
         WDF_DEVICE_POWER_POLICY_WAKE_SETTINGS wakeSettings;
         WDF_DEVICE_POWER_POLICY_WAKE_SETTINGS_INIT( &wakeSettings );
         WdfDeviceAssignSxWakeSettings( device, &wakeSettings );
     }
+
+
+	*/
 
     return status;
 }
